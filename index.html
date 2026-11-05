@@ -138,7 +138,7 @@ button{font:inherit;color:inherit;border:0;background:none;touch-action:manipula
     <div class="note">Désactivé : l'app compte seulement, pas d'écart.</div>
     <div class="line" style="margin-top:8px"><span>Taille des rouleaux</span></div>
     <div id="rolls"></div>
-    <div class="note" style="margin-top:12px;opacity:.5;font-size:11px">v8</div>
+    <div class="note" style="margin-top:12px;opacity:.5;font-size:11px">v9</div>
   </div>
 </div>
 
@@ -153,7 +153,7 @@ const D=[
 ];
 const N=D.length, KEY='cashcounter-v1';
 /* vibrations (ms) : à régler ici */
-const V_SHORT=35,V_NORMAL=60,V_DOUBLE=[60,80,60];
+const V_SHORT=60,V_NORMAL=100,V_DOUBLE=[100,80,100];
 const ROLL0={1:50,2:50,5:50,10:40,20:40,50:40,100:25,200:25};
 let S={ord:'asc',idx:N-1,q:Array(N).fill(0),fond:{on:true,val:75},vib:true,roll:{...ROLL0},hist:Array.from({length:N},()=>[])};
 try{const r=JSON.parse(localStorage.getItem(KEY));

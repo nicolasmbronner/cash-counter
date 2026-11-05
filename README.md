@@ -9,7 +9,7 @@ Les comptages restent dans le téléphone (localStorage), rien n'est envoyé.
 - Icônes : `python icons.py` (Pillow) les régénère.
 - Test local : `python -m http.server` puis http://localhost:8000/ (le service worker exige http://localhost ou https).
 
-## Choix v8
+## Choix v9
 
 - Écran principal strictement fixe (`position:fixed; inset:0; overflow:hidden`, pas de `100vh/100dvh`). Seuls défilent la bande des coupures (horizontal) et Réglages (vertical).
 - Règle de ⌫ :
@@ -18,6 +18,6 @@ Les comptages restent dans le téléphone (localStorage), rien n'est envoyé.
   - hors mode ajout, s'il y a un historique d'ajouts (rouleaux compris) : retire le dernier terme ajouté, répétable (`20 + 50 + 12` → `20 + 50` → `20`) ;
   - plus aucun ajout (quantité de base seule) : efface un chiffre.
 - Vibrations (interrupteur conservé), constantes `V_SHORT`, `V_NORMAL`, `V_DOUBLE` en tête du script :
-  - courte 35 ms : chiffres, ⌫, +1, −1, Préc., puce ;
-  - normale 60 ms : Suivant, + Ajouter, + rouleau, interrupteur ;
-  - double `[60,80,60]` : Effacer confirmé, Nouveau comptage confirmé, plafond 9999.
+  - courte 60 ms : chiffres, ⌫, +1, −1, Préc., puce ;
+  - normale 100 ms : Suivant, + Ajouter, + rouleau, interrupteur ;
+  - double `[100,80,100]` : Effacer confirmé, Nouveau comptage confirmé, plafond 9999.

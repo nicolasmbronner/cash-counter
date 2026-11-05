@@ -16,13 +16,13 @@
   --tx:#f2f5f8; --dim:#5d6775; --acc:#4aa3ff; --ok:#3ddc84; --bad:#ff6b6b; --nx:#1f9d55; --add:#ffb020;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;background:#0e1116;color:var(--tx);
+html,body{margin:0;height:100%;overflow:hidden;position:fixed;inset:0;width:100%;background:#0e1116;color:var(--tx);
   font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   font-variant-numeric:tabular-nums;overscroll-behavior:none;
   touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 button{font:inherit;color:inherit;border:0;background:none;touch-action:manipulation;cursor:pointer}
 
-.app{position:relative;width:100%;height:100vh;height:100dvh;background:var(--bg);display:flex;flex-direction:column;overflow:hidden;padding-top:env(safe-area-inset-top)}
+.app{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;overflow:hidden;padding-top:env(safe-area-inset-top)}
 .lay{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
 
 /* en-tête */
@@ -138,7 +138,7 @@ button{font:inherit;color:inherit;border:0;background:none;touch-action:manipula
     <div class="note">Désactivé : l'app compte seulement, pas d'écart.</div>
     <div class="line" style="margin-top:8px"><span>Taille des rouleaux</span></div>
     <div id="rolls"></div>
-    <div class="note" style="margin-top:12px;opacity:.5;font-size:11px">v6</div>
+    <div class="note" style="margin-top:12px;opacity:.5;font-size:11px">v7</div>
   </div>
 </div>
 
@@ -264,8 +264,8 @@ function e1(s,t,on){const e=$(s);e.textContent=t;e.classList.toggle('on',on)}
 /* actions */
 let armClr=false,armT=0,newArm=false,newT=0,longFired=false,pressT=0;
 const vibOK=typeof navigator.vibrate==='function';
-const DUR=40;
-const vib=(m=1)=>{if(!S.vib)return;try{vibOK&&navigator.vibrate(DUR*m)}catch(e){}};
+const V_SHORT=20,V_NORMAL=40,V_DOUBLE=[40,60,40];
+const vib=(p=V_SHORT)=>{if(!S.vib)return;try{vibOK&&navigator.vibrate(p)}catch(e){}};
 let wl=null;
 async function lock(){try{if('wakeLock' in navigator&&!wl){wl=await navigator.wakeLock.request('screen');wl.addEventListener('release',()=>{wl=null})}}catch(e){wl=null}}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')lock()});
@@ -277,12 +277,12 @@ function validate(){
 function resetHist(){H[S.idx]=[];just=false}
 function goto(i){validate();S.idx=(i+N)%N;fresh=true;just=false;addMode=false;addStr=''}
 function setOrd(o){if(S.ord===o)return;S.ord=o;buildLists();lastScroll='';commit()}
-function doClear(){S.q[S.idx]=0;fresh=false;armClr=false;clearTimeout(armT);addMode=false;addStr='';resetHist();vib(2);commit()}
+function doClear(){S.q[S.idx]=0;fresh=false;armClr=false;clearTimeout(armT);addMode=false;addStr='';resetHist();vib(V_DOUBLE);commit()}
 function commit(){save();render()}
 function key(k){
   if(/^[0-9]$/.test(k)){
-    if(addMode){const s=(addStr+k).replace(/^0+(?=\d)/,'');if(S.q[S.idx]+(+s)>9999)return vib(2);addStr=s;vib();return commit()}
-    const d=+k,q=S.q[S.idx],nq=fresh?d:q*10+d;if(nq>9999)return vib(2);S.q[S.idx]=nq;fresh=false;resetHist();vib();return commit()}
+    if(addMode){const s=(addStr+k).replace(/^0+(?=\d)/,'');if(S.q[S.idx]+(+s)>9999)return vib(V_DOUBLE);addStr=s;vib();return commit()}
+    const d=+k,q=S.q[S.idx],nq=fresh?d:q*10+d;if(nq>9999)return vib(V_DOUBLE);S.q[S.idx]=nq;fresh=false;resetHist();vib();return commit()}
   if(k==='bk'){
     if(addMode){if(addStr)addStr=addStr.slice(0,-1);else addMode=false;vib();return commit()}
     const h=H[S.idx];
@@ -291,15 +291,15 @@ function key(k){
   if(k==='add'){
     if(addMode){if(addStr){validate();addMode=true;addStr=''}else{addMode=false}}
     else{addMode=true;addStr=''}
-    vib();return commit()}
+    vib(V_NORMAL);return commit()}
   if(k==='roll'){
     if(!isCoin(S.idx))return;
     validate();const r=rollOf(S.idx);
-    if(S.q[S.idx]+r>9999)return vib(2),commit();
-    S.q[S.idx]+=r;H[S.idx].push(r);just=true;fresh=false;vib();return commit()}
+    if(S.q[S.idx]+r>9999)return vib(V_DOUBLE),commit();
+    S.q[S.idx]+=r;H[S.idx].push(r);just=true;fresh=false;vib(V_NORMAL);return commit()}
   if(k==='+'){validate();S.q[S.idx]=Math.min(9999,S.q[S.idx]+1);fresh=true;resetHist();vib();return commit()}
   if(k==='-'){validate();S.q[S.idx]=Math.max(0,S.q[S.idx]-1);fresh=true;resetHist();vib();return commit()}
-  if(k==='n'){goto(stepIdx(1));vib(2);return commit()}
+  if(k==='n'){goto(stepIdx(1));vib(V_NORMAL);return commit()}
   if(k==='p'){goto(stepIdx(-1));vib();return commit()}
   if(k==='clr'){
     if(longFired){longFired=false;return}
@@ -310,13 +310,13 @@ function key(k){
   if(k==='close'){$$('.ov').forEach(o=>o.classList.remove('show'));return}
   if(k==='ord:asc')return setOrd('asc');
   if(k==='ord:desc')return setOrd('desc');
-  if(k==='vibtog'){S.vib=!S.vib;commit();vib(2);return}
+  if(k==='vibtog'){S.vib=!S.vib;commit();vib(V_NORMAL);return}
   if(k==='fondtog'){S.fond.on=!S.fond.on;return commit()}
   if(k.startsWith('f:')){S.fond.val=Math.max(0,S.fond.val+(+k.slice(2)));return commit()}
   if(k.startsWith('f=:')){S.fond.val=+k.slice(3);S.fond.on=true;return commit()}
   if(k.startsWith('r:')){const [,i,dl]=k.split(':');const c=D[+i][0];S.roll[c]=Math.min(999,Math.max(1,S.roll[c]+(+dl)));return commit()}
   if(k==='new'){
-    if(newArm){S.q=Array(N).fill(0);H.forEach((_,i)=>H[i]=[]);addMode=false;addStr='';just=false;S.idx=seq()[0];fresh=true;newArm=false;$('#newBtn').textContent='Nouveau comptage';$('#newBtn').classList.remove('armed');return commit()}
+    if(newArm){S.q=Array(N).fill(0);H.forEach((_,i)=>H[i]=[]);addMode=false;addStr='';just=false;S.idx=seq()[0];fresh=true;newArm=false;vib(V_DOUBLE);$('#newBtn').textContent='Nouveau comptage';$('#newBtn').classList.remove('armed');return commit()}
     newArm=true;$('#newBtn').textContent='Sûr ? Appuyer encore';$('#newBtn').classList.add('armed');
     clearTimeout(newT);newT=setTimeout(()=>{newArm=false;$('#newBtn').textContent='Nouveau comptage';$('#newBtn').classList.remove('armed')},2500);
   }

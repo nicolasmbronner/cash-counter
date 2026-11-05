@@ -105,6 +105,9 @@ button{font:inherit;color:inherit;border:0;background:none;touch-action:manipula
     <div class="line"><span>Ordre</span></div>
     <div class="btns"><button class="btn" id="ordAsc" data-k="ord:asc">Petit → grand</button><button class="btn" id="ordDesc" data-k="ord:desc">Grand → petit</button></div>
     <div class="line"><span>Vibration <span class="note" id="vibNA" hidden>non disponible ici</span></span><button class="btn" id="vibTog" data-k="vibtog"></button></div>
+    <div class="line"><span>Durée</span></div>
+    <div class="btns"><button class="btn" id="dur0" data-k="dur:0">Courte</button><button class="btn" id="dur1" data-k="dur:1">Moyenne</button><button class="btn" id="dur2" data-k="dur:2">Forte</button></div>
+    <div class="line"><button class="btn" data-k="vibtest">Tester (0,3 s)</button><span class="note" id="vibRes"></span></div>
     <div class="line"><span>Fond de caisse</span><button class="btn" id="fondTog" data-k="fondtog"></button></div>
     <div class="line"><span class="big" id="fondVal"></span></div>
     <div class="btns">
@@ -130,11 +133,11 @@ const D=[
  [5,'0,05 €','Pièce','#d9825b'],[2,'0,02 €','Pièce','#d9825b'],[1,'0,01 €','Pièce','#d9825b']
 ];
 const N=D.length, KEY='cashcounter-v1';
-let S={ord:'asc',idx:N-1,q:Array(N).fill(0),fond:{on:true,val:75},vib:true};
+let S={ord:'asc',idx:N-1,q:Array(N).fill(0),fond:{on:true,val:75},vib:true,dur:1};
 try{const r=JSON.parse(localStorage.getItem(KEY));
   if(r&&Array.isArray(r.q)&&r.q.length===N&&r.q.every(Number.isInteger)){
     S.q=r.q;S.idx=Math.min(Math.max(+r.idx||0,0),N-1);
-    S.vib=r.vib!==false;
+    S.vib=r.vib!==false;S.dur=[0,1,2].includes(r.dur)?r.dur:1;
     S.ord=r.ord==='desc'?'desc':'asc';
     if(r.fond&&Number.isInteger(r.fond.val))S.fond={on:!!r.fond.on,val:r.fond.val};
   }}catch(e){}
@@ -203,6 +206,7 @@ function render(){
   });
   e1('#ordAsc','Petit → grand',S.ord==='asc');e1('#ordDesc','Grand → petit',S.ord==='desc');
   $$('.k.clr').forEach(e=>e.textContent=armClr?'Sûr ?':'Effacer');
+  [0,1,2].forEach(i=>e1('#dur'+i,['Courte','Moyenne','Forte'][i],S.dur===i));
   e1('#fondTog',S.fond.on?'Activé':'Désactivé',S.fond.on);
   e1('#vibTog',S.vib?'Activée':'Désactivée',S.vib);$('#vibNA').hidden=vibOK;$('#vibTog').disabled=!vibOK;
   $('#fondVal').textContent=S.fond.on?fmtInt(S.fond.val)+' €':'—';
@@ -214,32 +218,35 @@ function e1(s,t,on){const e=$(s);e.textContent=t;e.classList.toggle('on',on)}
 /* actions */
 let armClr=false,armT=0,newArm=false,newT=0,longFired=false,pressT=0;
 const vibOK=typeof navigator.vibrate==='function';
-const vib=ms=>{if(!S.vib)return;try{vibOK&&navigator.vibrate(ms)}catch(e){}};
+const DUR=[20,40,70];
+const vib=(m=1)=>{if(!S.vib)return;try{vibOK&&navigator.vibrate(DUR[S.dur]*m)}catch(e){}};
 let wl=null;
 async function lock(){try{if('wakeLock' in navigator&&!wl){wl=await navigator.wakeLock.request('screen');wl.addEventListener('release',()=>{wl=null})}}catch(e){wl=null}}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')lock()});
 
 function goto(i){S.idx=(i+N)%N;fresh=true}
 function setOrd(o){if(S.ord===o)return;S.ord=o;buildLists();lastScroll='';commit()}
-function doClear(){S.q[S.idx]=0;fresh=false;armClr=false;clearTimeout(armT);vib(40);commit()}
+function doClear(){S.q[S.idx]=0;fresh=false;armClr=false;clearTimeout(armT);vib(2);commit()}
 function commit(){save();render()}
 function key(k){
-  if(/^[0-9]$/.test(k)){const d=+k,q=S.q[S.idx],nq=fresh?d:q*10+d;if(nq>9999)return vib(60);S.q[S.idx]=nq;fresh=false;vib(12);return commit()}
-  if(k==='bk'){S.q[S.idx]=Math.floor(S.q[S.idx]/10);fresh=false;vib(12);return commit()}
-  if(k==='+'){S.q[S.idx]=Math.min(9999,S.q[S.idx]+1);fresh=true;vib(12);return commit()}
-  if(k==='-'){S.q[S.idx]=Math.max(0,S.q[S.idx]-1);fresh=true;vib(12);return commit()}
-  if(k==='n'){goto(stepIdx(1));vib(25);return commit()}
-  if(k==='p'){goto(stepIdx(-1));vib(12);return commit()}
+  if(/^[0-9]$/.test(k)){const d=+k,q=S.q[S.idx],nq=fresh?d:q*10+d;if(nq>9999)return vib(2);S.q[S.idx]=nq;fresh=false;vib();return commit()}
+  if(k==='bk'){S.q[S.idx]=Math.floor(S.q[S.idx]/10);fresh=false;vib();return commit()}
+  if(k==='+'){S.q[S.idx]=Math.min(9999,S.q[S.idx]+1);fresh=true;vib();return commit()}
+  if(k==='-'){S.q[S.idx]=Math.max(0,S.q[S.idx]-1);fresh=true;vib();return commit()}
+  if(k==='n'){goto(stepIdx(1));vib(2);return commit()}
+  if(k==='p'){goto(stepIdx(-1));vib();return commit()}
   if(k==='clr'){
     if(longFired){longFired=false;return}
     if(armClr)return doClear();
-    armClr=true;vib(12);clearTimeout(armT);armT=setTimeout(()=>{armClr=false;render()},2000);return render();
+    armClr=true;vib();clearTimeout(armT);armT=setTimeout(()=>{armClr=false;render()},2000);return render();
   }
   if(k==='gear'){$('#ovSet').classList.add('show');return}
   if(k==='close'){$$('.ov').forEach(o=>o.classList.remove('show'));return}
   if(k==='ord:asc')return setOrd('asc');
   if(k==='ord:desc')return setOrd('desc');
-  if(k==='vibtog'){S.vib=!S.vib;commit();vib(40);return}
+  if(k==='vibtog'){S.vib=!S.vib;commit();vib(2);return}
+  if(k.startsWith('dur:')){S.dur=+k.slice(4);commit();vib(2);return}
+  if(k==='vibtest'){let t;try{t=typeof navigator.vibrate!=='function'?'API absente':navigator.vibrate(300)?'envoyée (true)':'refusée (false)'}catch(e){t='erreur : '+e.message}$('#vibRes').textContent=t;return}
   if(k==='fondtog'){S.fond.on=!S.fond.on;return commit()}
   if(k.startsWith('f:')){S.fond.val=Math.max(0,S.fond.val+(+k.slice(2)));return commit()}
   if(k.startsWith('f=:')){S.fond.val=+k.slice(3);S.fond.on=true;return commit()}
@@ -253,7 +260,7 @@ ph.addEventListener('click',e=>{
   lock();
   const j=e.target.closest('[data-jump]');
   if(j){
-    goto(+j.dataset.jump);vib(12);
+    goto(+j.dataset.jump);vib();
     return commit();
   }
   const b=e.target.closest('[data-k]');if(b)key(b.dataset.k);

@@ -1,5 +1,5 @@
 // Incrémenter VERSION à chaque modification des fichiers pour forcer la mise à jour.
-const VERSION = 'v7';
+const VERSION = 'v8';
 const CACHE = 'cash-counter-' + VERSION;
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 

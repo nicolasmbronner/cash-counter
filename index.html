@@ -138,7 +138,7 @@ button{font:inherit;color:inherit;border:0;background:none;touch-action:manipula
     <div class="note">Désactivé : l'app compte seulement, pas d'écart.</div>
     <div class="line" style="margin-top:8px"><span>Taille des rouleaux</span></div>
     <div id="rolls"></div>
-    <div class="note" style="margin-top:12px;opacity:.5;font-size:11px">v7</div>
+    <div class="note" style="margin-top:12px;opacity:.5;font-size:11px">v8</div>
   </div>
 </div>
 
@@ -152,8 +152,10 @@ const D=[
  [5,'0,05 €','Pièce','#d9825b'],[2,'0,02 €','Pièce','#d9825b'],[1,'0,01 €','Pièce','#d9825b']
 ];
 const N=D.length, KEY='cashcounter-v1';
+/* vibrations (ms) : à régler ici */
+const V_SHORT=35,V_NORMAL=60,V_DOUBLE=[60,80,60];
 const ROLL0={1:50,2:50,5:50,10:40,20:40,50:40,100:25,200:25};
-let S={ord:'asc',idx:N-1,q:Array(N).fill(0),fond:{on:true,val:75},vib:true,roll:{...ROLL0},hist:Array.from({length:N},()=>[]),just:false};
+let S={ord:'asc',idx:N-1,q:Array(N).fill(0),fond:{on:true,val:75},vib:true,roll:{...ROLL0},hist:Array.from({length:N},()=>[])};
 try{const r=JSON.parse(localStorage.getItem(KEY));
   if(r&&Array.isArray(r.q)&&r.q.length===N&&r.q.every(Number.isInteger)){
     S.q=r.q;S.idx=Math.min(Math.max(+r.idx||0,0),N-1);
@@ -162,13 +164,12 @@ try{const r=JSON.parse(localStorage.getItem(KEY));
     if(r.fond&&Number.isInteger(r.fond.val))S.fond={on:!!r.fond.on,val:r.fond.val};
     if(r.roll)for(const k in ROLL0)if(Number.isInteger(r.roll[k])&&r.roll[k]>0)S.roll[k]=Math.min(999,r.roll[k]);
     if(Array.isArray(r.hist))r.hist.slice(0,N).forEach((h,i)=>{if(Array.isArray(h)&&h.every(n=>Number.isInteger(n)&&n>0)&&h.reduce((a,b)=>a+b,0)<=S.q[i])S.hist[i]=h});
-    S.just=r.just===true;
   }}catch(e){}
 let fresh=true;
-/* mode ajout : addMode = saisie d'un ajout en cours ; H[i] = ajouts validés (sauvés dans S.hist) ; just = dernier geste = ajout validé */
-let addMode=false,addStr='',just=S.just;
+/* mode ajout : addMode = saisie d'un ajout en cours ; H[i] = ajouts validés (sauvés dans S.hist) */
+let addMode=false,addStr='';
 const H=S.hist;
-const save=()=>{S.just=just;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 
 const seq=()=>{const a=[...Array(N).keys()];return S.ord==='desc'?a:a.reverse()};
 const stepIdx=d=>{const s=seq();return s[(s.indexOf(S.idx)+d+N)%N]};
@@ -264,7 +265,6 @@ function e1(s,t,on){const e=$(s);e.textContent=t;e.classList.toggle('on',on)}
 /* actions */
 let armClr=false,armT=0,newArm=false,newT=0,longFired=false,pressT=0;
 const vibOK=typeof navigator.vibrate==='function';
-const V_SHORT=20,V_NORMAL=40,V_DOUBLE=[40,60,40];
 const vib=(p=V_SHORT)=>{if(!S.vib)return;try{vibOK&&navigator.vibrate(p)}catch(e){}};
 let wl=null;
 async function lock(){try{if('wakeLock' in navigator&&!wl){wl=await navigator.wakeLock.request('screen');wl.addEventListener('release',()=>{wl=null})}}catch(e){wl=null}}
@@ -272,10 +272,10 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 /* valide l'ajout en cours (s'il y a des chiffres) et sort du mode ajout */
 function validate(){
-  if(addMode){const n=pend();if(n){S.q[S.idx]+=n;H[S.idx].push(n);just=true;fresh=false}addMode=false;addStr=''}
+  if(addMode){const n=pend();if(n){S.q[S.idx]+=n;H[S.idx].push(n);fresh=false}addMode=false;addStr=''}
 }
-function resetHist(){H[S.idx]=[];just=false}
-function goto(i){validate();S.idx=(i+N)%N;fresh=true;just=false;addMode=false;addStr=''}
+function resetHist(){H[S.idx]=[]}
+function goto(i){validate();S.idx=(i+N)%N;fresh=true;addMode=false;addStr=''}
 function setOrd(o){if(S.ord===o)return;S.ord=o;buildLists();lastScroll='';commit()}
 function doClear(){S.q[S.idx]=0;fresh=false;armClr=false;clearTimeout(armT);addMode=false;addStr='';resetHist();vib(V_DOUBLE);commit()}
 function commit(){save();render()}
@@ -284,9 +284,9 @@ function key(k){
     if(addMode){const s=(addStr+k).replace(/^0+(?=\d)/,'');if(S.q[S.idx]+(+s)>9999)return vib(V_DOUBLE);addStr=s;vib();return commit()}
     const d=+k,q=S.q[S.idx],nq=fresh?d:q*10+d;if(nq>9999)return vib(V_DOUBLE);S.q[S.idx]=nq;fresh=false;resetHist();vib();return commit()}
   if(k==='bk'){
-    if(addMode){if(addStr)addStr=addStr.slice(0,-1);else addMode=false;vib();return commit()}
+    if(addMode){addMode=false;addStr='';vib();return commit()}
     const h=H[S.idx];
-    if(just&&h.length){S.q[S.idx]-=h.pop();just=false;fresh=false;vib();return commit()}
+    if(h.length){S.q[S.idx]-=h.pop();fresh=false;vib();return commit()}
     S.q[S.idx]=Math.floor(S.q[S.idx]/10);fresh=false;resetHist();vib();return commit()}
   if(k==='add'){
     if(addMode){if(addStr){validate();addMode=true;addStr=''}else{addMode=false}}
@@ -296,7 +296,7 @@ function key(k){
     if(!isCoin(S.idx))return;
     validate();const r=rollOf(S.idx);
     if(S.q[S.idx]+r>9999)return vib(V_DOUBLE),commit();
-    S.q[S.idx]+=r;H[S.idx].push(r);just=true;fresh=false;vib(V_NORMAL);return commit()}
+    S.q[S.idx]+=r;H[S.idx].push(r);fresh=false;vib(V_NORMAL);return commit()}
   if(k==='+'){validate();S.q[S.idx]=Math.min(9999,S.q[S.idx]+1);fresh=true;resetHist();vib();return commit()}
   if(k==='-'){validate();S.q[S.idx]=Math.max(0,S.q[S.idx]-1);fresh=true;resetHist();vib();return commit()}
   if(k==='n'){goto(stepIdx(1));vib(V_NORMAL);return commit()}
@@ -316,7 +316,7 @@ function key(k){
   if(k.startsWith('f=:')){S.fond.val=+k.slice(3);S.fond.on=true;return commit()}
   if(k.startsWith('r:')){const [,i,dl]=k.split(':');const c=D[+i][0];S.roll[c]=Math.min(999,Math.max(1,S.roll[c]+(+dl)));return commit()}
   if(k==='new'){
-    if(newArm){S.q=Array(N).fill(0);H.forEach((_,i)=>H[i]=[]);addMode=false;addStr='';just=false;S.idx=seq()[0];fresh=true;newArm=false;vib(V_DOUBLE);$('#newBtn').textContent='Nouveau comptage';$('#newBtn').classList.remove('armed');return commit()}
+    if(newArm){S.q=Array(N).fill(0);H.forEach((_,i)=>H[i]=[]);addMode=false;addStr='';S.idx=seq()[0];fresh=true;newArm=false;vib(V_DOUBLE);$('#newBtn').textContent='Nouveau comptage';$('#newBtn').classList.remove('armed');return commit()}
     newArm=true;$('#newBtn').textContent='Sûr ? Appuyer encore';$('#newBtn').classList.add('armed');
     clearTimeout(newT);newT=setTimeout(()=>{newArm=false;$('#newBtn').textContent='Nouveau comptage';$('#newBtn').classList.remove('armed')},2500);
   }

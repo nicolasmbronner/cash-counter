@@ -126,8 +126,6 @@ button{font:inherit;color:inherit;border:0;background:none;touch-action:manipula
     <div class="line"><span>Ordre</span></div>
     <div class="btns"><button class="btn" id="ordAsc" data-k="ord:asc">Petit → grand</button><button class="btn" id="ordDesc" data-k="ord:desc">Grand → petit</button></div>
     <div class="line"><span>Vibration <span class="note" id="vibNA" hidden>non disponible ici</span></span><button class="btn" id="vibTog" data-k="vibtog"></button></div>
-    <div class="line"><span>Durée</span></div>
-    <div class="btns"><button class="btn" id="dur0" data-k="dur:0">Courte</button><button class="btn" id="dur1" data-k="dur:1">Moyenne</button><button class="btn" id="dur2" data-k="dur:2">Forte</button></div>
     <div class="line"><span>Fond de caisse</span><button class="btn" id="fondTog" data-k="fondtog"></button></div>
     <div class="line"><span class="big" id="fondVal"></span></div>
     <div class="btns">
@@ -140,7 +138,7 @@ button{font:inherit;color:inherit;border:0;background:none;touch-action:manipula
     <div class="note">Désactivé : l'app compte seulement, pas d'écart.</div>
     <div class="line" style="margin-top:8px"><span>Taille des rouleaux</span></div>
     <div id="rolls"></div>
-    <div class="note" style="margin-top:12px;opacity:.5;font-size:11px">v5</div>
+    <div class="note" style="margin-top:12px;opacity:.5;font-size:11px">v6</div>
   </div>
 </div>
 
@@ -155,11 +153,11 @@ const D=[
 ];
 const N=D.length, KEY='cashcounter-v1';
 const ROLL0={1:50,2:50,5:50,10:40,20:40,50:40,100:25,200:25};
-let S={ord:'asc',idx:N-1,q:Array(N).fill(0),fond:{on:true,val:75},vib:true,dur:1,roll:{...ROLL0},hist:Array.from({length:N},()=>[]),just:false};
+let S={ord:'asc',idx:N-1,q:Array(N).fill(0),fond:{on:true,val:75},vib:true,roll:{...ROLL0},hist:Array.from({length:N},()=>[]),just:false};
 try{const r=JSON.parse(localStorage.getItem(KEY));
   if(r&&Array.isArray(r.q)&&r.q.length===N&&r.q.every(Number.isInteger)){
     S.q=r.q;S.idx=Math.min(Math.max(+r.idx||0,0),N-1);
-    S.vib=r.vib!==false;S.dur=[0,1,2].includes(r.dur)?r.dur:1;
+    S.vib=r.vib!==false;
     S.ord=r.ord==='desc'?'desc':'asc';
     if(r.fond&&Number.isInteger(r.fond.val))S.fond={on:!!r.fond.on,val:r.fond.val};
     if(r.roll)for(const k in ROLL0)if(Number.isInteger(r.roll[k])&&r.roll[k]>0)S.roll[k]=Math.min(999,r.roll[k]);
@@ -254,7 +252,6 @@ function render(){
   });
   e1('#ordAsc','Petit → grand',S.ord==='asc');e1('#ordDesc','Grand → petit',S.ord==='desc');
   $$('.k.clr').forEach(e=>e.textContent=armClr?'Sûr ?':'Effacer');
-  [0,1,2].forEach(i=>e1('#dur'+i,['Courte','Moyenne','Forte'][i],S.dur===i));
   e1('#fondTog',S.fond.on?'Activé':'Désactivé',S.fond.on);
   e1('#vibTog',S.vib?'Activée':'Désactivée',S.vib);$('#vibNA').hidden=vibOK;$('#vibTog').disabled=!vibOK;
   $('#fondVal').textContent=S.fond.on?fmtInt(S.fond.val)+' €':'—';
@@ -267,8 +264,8 @@ function e1(s,t,on){const e=$(s);e.textContent=t;e.classList.toggle('on',on)}
 /* actions */
 let armClr=false,armT=0,newArm=false,newT=0,longFired=false,pressT=0;
 const vibOK=typeof navigator.vibrate==='function';
-const DUR=[20,40,70];
-const vib=(m=1)=>{if(!S.vib)return;try{vibOK&&navigator.vibrate(DUR[S.dur]*m)}catch(e){}};
+const DUR=40;
+const vib=(m=1)=>{if(!S.vib)return;try{vibOK&&navigator.vibrate(DUR*m)}catch(e){}};
 let wl=null;
 async function lock(){try{if('wakeLock' in navigator&&!wl){wl=await navigator.wakeLock.request('screen');wl.addEventListener('release',()=>{wl=null})}}catch(e){wl=null}}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')lock()});
@@ -314,7 +311,6 @@ function key(k){
   if(k==='ord:asc')return setOrd('asc');
   if(k==='ord:desc')return setOrd('desc');
   if(k==='vibtog'){S.vib=!S.vib;commit();vib(2);return}
-  if(k.startsWith('dur:')){S.dur=+k.slice(4);commit();vib(2);return}
   if(k==='fondtog'){S.fond.on=!S.fond.on;return commit()}
   if(k.startsWith('f:')){S.fond.val=Math.max(0,S.fond.val+(+k.slice(2)));return commit()}
   if(k.startsWith('f=:')){S.fond.val=+k.slice(3);S.fond.on=true;return commit()}

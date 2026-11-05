@@ -121,12 +121,13 @@ button{font:inherit;color:inherit;border:0;background:none;touch-action:manipula
 
   <div class="ov" id="ovSet">
     <div class="line"><h2>Réglages</h2><button class="btn" data-k="close">Fermer</button></div>
+    <div class="line"><button class="btn clr" id="newBtn" data-k="new">Nouveau comptage</button></div>
+    <div class="note">2 appuis pour confirmer. Remet les 15 quantités à zéro.</div>
     <div class="line"><span>Ordre</span></div>
     <div class="btns"><button class="btn" id="ordAsc" data-k="ord:asc">Petit → grand</button><button class="btn" id="ordDesc" data-k="ord:desc">Grand → petit</button></div>
     <div class="line"><span>Vibration <span class="note" id="vibNA" hidden>non disponible ici</span></span><button class="btn" id="vibTog" data-k="vibtog"></button></div>
     <div class="line"><span>Durée</span></div>
     <div class="btns"><button class="btn" id="dur0" data-k="dur:0">Courte</button><button class="btn" id="dur1" data-k="dur:1">Moyenne</button><button class="btn" id="dur2" data-k="dur:2">Forte</button></div>
-    <div class="line"><button class="btn" data-k="vibtest">Tester (0,3 s)</button><span class="note" id="vibRes"></span></div>
     <div class="line"><span>Fond de caisse</span><button class="btn" id="fondTog" data-k="fondtog"></button></div>
     <div class="line"><span class="big" id="fondVal"></span></div>
     <div class="btns">
@@ -139,9 +140,7 @@ button{font:inherit;color:inherit;border:0;background:none;touch-action:manipula
     <div class="note">Désactivé : l'app compte seulement, pas d'écart.</div>
     <div class="line" style="margin-top:8px"><span>Taille des rouleaux</span></div>
     <div id="rolls"></div>
-    <div class="line" style="margin-top:12px"><button class="btn clr" id="newBtn" data-k="new">Nouveau comptage</button></div>
-    <div class="note">2 appuis pour confirmer. Remet les 15 quantités à zéro.</div>
-    <div class="note" style="margin-top:12px;opacity:.5;font-size:11px">v4</div>
+    <div class="note" style="margin-top:12px;opacity:.5;font-size:11px">v5</div>
   </div>
 </div>
 
@@ -198,7 +197,7 @@ const ph=$('#ph');
 const kb=(k,t,cls,a)=>`<button class="k ${cls||''}" data-k="${k}" style="grid-area:${a}">${t}</button>`;
 (function(){
   $('#hd').outerHTML=`<header class="hd"><div class="tw"><div class="l">Total</div><div class="tot"></div></div>
- <div class="fx"><div class="fond"></div><div class="ecart"></div></div><button class="ib" data-k="gear">Régl.</button></header>`;
+ <div class="fx"><div class="fond"></div><div class="ecart"></div></div><button class="ib" data-k="gear" aria-label="Réglages"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#f2f5f8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="pointer-events:none"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></header>`;
   let h='';const dg=['7','8','9','4','5','6','1','2','3'];
   dg.forEach((d,i)=>h+=kb(d,d,'',`${Math.floor(i/3)*3+1}/${i%3+1}/span 3/span 1`));
   h+=kb('bk','⌫','act','10/1/span 3/span 1')+kb('0','0','','10/2/span 3/span 1')+kb('clr','Effacer','clr','10/3/span 3/span 1');
@@ -316,7 +315,6 @@ function key(k){
   if(k==='ord:desc')return setOrd('desc');
   if(k==='vibtog'){S.vib=!S.vib;commit();vib(2);return}
   if(k.startsWith('dur:')){S.dur=+k.slice(4);commit();vib(2);return}
-  if(k==='vibtest'){let t;try{t=typeof navigator.vibrate!=='function'?'API absente':navigator.vibrate(300)?'envoyée (true)':'refusée (false)'}catch(e){t='erreur : '+e.message}$('#vibRes').textContent=t;return}
   if(k==='fondtog'){S.fond.on=!S.fond.on;return commit()}
   if(k.startsWith('f:')){S.fond.val=Math.max(0,S.fond.val+(+k.slice(2)));return commit()}
   if(k.startsWith('f=:')){S.fond.val=+k.slice(3);S.fond.on=true;return commit()}

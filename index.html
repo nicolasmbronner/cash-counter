@@ -13,7 +13,7 @@
 
 :root{
   --bg:#0e1116; --panel:#171b22; --key:#232a35; --key2:#2e3744; --line:#2a323d;
-  --tx:#f2f5f8; --dim:#5d6775; --acc:#4aa3ff; --ok:#3ddc84; --bad:#ff6b6b; --nx:#1f9d55;
+  --tx:#f2f5f8; --dim:#5d6775; --acc:#4aa3ff; --ok:#3ddc84; --bad:#ff6b6b; --nx:#1f9d55; --add:#ffb020;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;background:#0e1116;color:var(--tx);
@@ -40,15 +40,27 @@ button{font:inherit;color:inherit;border:0;background:none;touch-action:manipula
 /* coupure courante */
 .f-qty.zero,.f-sub.zero{color:var(--dim)}
 .f-qty.fresh{background:rgba(74,163,255,.22);border-radius:8px;box-shadow:0 0 0 2px var(--acc)}
+.f-qty.adding{background:rgba(255,176,32,.2);border-radius:8px;box-shadow:0 0 0 2px var(--add);color:var(--add)}
 .badge{display:inline-block;padding:2px 10px;border-radius:8px;font-weight:800;color:#0b0e13}
 
-.cardA{flex:none;height:130px;padding:8px 12px;display:flex;flex-direction:column;justify-content:center;gap:6px;border-bottom:1px solid var(--line)}
-.cardA .top{display:flex;align-items:center;gap:10px}
-.cardA .f-denom{font-size:28px}
-.cardA .f-type{font-size:13px;color:var(--dim)}
+.cardA{flex:none;height:146px;padding:8px 12px;display:flex;flex-direction:column;justify-content:center;gap:6px;border-bottom:1px solid var(--line)}
+.cardA.adding{box-shadow:inset 0 0 0 2px var(--add)}
+.cardA .top{display:flex;align-items:center;gap:6px;min-width:0}
+.cardA .f-denom{font-size:26px;white-space:nowrap}
+.cardA .f-type{font-size:13px;color:var(--dim);min-width:0;overflow:hidden;text-overflow:ellipsis}
+.cardA .acts{margin-left:auto;display:flex;gap:6px;flex:none}
+.rollb,.addb{height:44px;padding:0 9px;border-radius:10px;background:var(--key2);font-size:13px;font-weight:800;white-space:nowrap}
+.rollb[hidden]{display:none}
+.rollb:active{background:var(--acc);color:#04121f}
+.addb{color:var(--add)}
+.addb.on{background:var(--add);color:#1a1100}
 .cardA .mid{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.cardA .f-qty{font-size:56px;font-weight:800;line-height:1.05;padding:0 10px;min-width:100px}
-.cardA .f-sub{font-size:40px;font-weight:700;text-align:right;white-space:nowrap}
+.qcol{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.cardA .f-qty{font-size:56px;font-weight:800;height:59px;line-height:59px;padding:0 10px;white-space:nowrap;min-width:0;overflow:hidden}
+.cardA .f-qty.adding{font-size:34px;padding:0 5px}
+.hist{height:15px;font-size:12px;line-height:15px;color:#7c8696;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:10px}
+.hist.live{color:var(--add);font-weight:700}
+.cardA .f-sub{flex:none;font-size:40px;font-weight:700;text-align:right;white-space:nowrap}
 .f-sub[data-len=l]{font-size:32px!important}.f-sub[data-len=xl]{font-size:25px!important}
 
 .strip{flex:none;height:114px;position:relative;display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding:8px;border-bottom:1px solid var(--line);scrollbar-width:none;overscroll-behavior:contain}
@@ -81,6 +93,10 @@ button{font:inherit;color:inherit;border:0;background:none;touch-action:manipula
 .ov h2{margin:0;font-size:18px}
 .ov .line{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .ov .btn{min-height:48px;padding:0 14px;border-radius:12px;background:var(--key);font-weight:700;font-size:16px}
+.ov .btn.s{padding:0;min-width:42px;font-size:14px}
+.ov .rv{min-width:34px;text-align:center;font-weight:800;font-size:18px}
+.ov .rl{flex:1;font-weight:700}
+.ov .btns.rr{flex-wrap:nowrap;gap:4px;align-items:center}
 .ov .btn.on{background:var(--acc);color:#04121f}
 .ov .btns{display:flex;gap:8px;flex-wrap:wrap}
 .ov .big{font-size:34px;font-weight:800}
@@ -93,8 +109,11 @@ button{font:inherit;color:inherit;border:0;background:none;touch-action:manipula
   <section class="lay">
     <div id="hd"></div>
     <div class="cardA">
-      <div class="top"><span class="badge f-badge f-denom"></span><span class="f-type"></span></div>
-      <div class="mid"><div class="f-qty"></div><div class="f-sub"></div></div>
+      <div class="top"><span class="badge f-badge f-denom"></span><span class="f-type"></span><span class="acts"><button class="rollb" data-k="roll"></button><button class="addb" data-k="add">+ Ajouter</button></span></div>
+      <div class="mid">
+        <div class="qcol"><div class="f-qty"></div><div class="hist"></div></div>
+        <div class="f-sub"></div>
+      </div>
     </div>
     <div class="strip" id="strip"></div>
     <div class="pad padAB" id="pad"></div>
@@ -118,9 +137,11 @@ button{font:inherit;color:inherit;border:0;background:none;touch-action:manipula
       <button class="btn" data-k="f=:75">75 (station)</button><button class="btn" data-k="f=:151">151 (caisse)</button>
     </div>
     <div class="note">Désactivé : l'app compte seulement, pas d'écart.</div>
+    <div class="line" style="margin-top:8px"><span>Taille des rouleaux</span></div>
+    <div id="rolls"></div>
     <div class="line" style="margin-top:12px"><button class="btn clr" id="newBtn" data-k="new">Nouveau comptage</button></div>
     <div class="note">2 appuis pour confirmer. Remet les 15 quantités à zéro.</div>
-    <div class="note" style="margin-top:12px;opacity:.5;font-size:11px">v3</div>
+    <div class="note" style="margin-top:12px;opacity:.5;font-size:11px">v4</div>
   </div>
 </div>
 
@@ -134,16 +155,23 @@ const D=[
  [5,'0,05 €','Pièce','#d9825b'],[2,'0,02 €','Pièce','#d9825b'],[1,'0,01 €','Pièce','#d9825b']
 ];
 const N=D.length, KEY='cashcounter-v1';
-let S={ord:'asc',idx:N-1,q:Array(N).fill(0),fond:{on:true,val:75},vib:true,dur:1};
+const ROLL0={1:50,2:50,5:50,10:40,20:40,50:40,100:25,200:25};
+let S={ord:'asc',idx:N-1,q:Array(N).fill(0),fond:{on:true,val:75},vib:true,dur:1,roll:{...ROLL0},hist:Array.from({length:N},()=>[]),just:false};
 try{const r=JSON.parse(localStorage.getItem(KEY));
   if(r&&Array.isArray(r.q)&&r.q.length===N&&r.q.every(Number.isInteger)){
     S.q=r.q;S.idx=Math.min(Math.max(+r.idx||0,0),N-1);
     S.vib=r.vib!==false;S.dur=[0,1,2].includes(r.dur)?r.dur:1;
     S.ord=r.ord==='desc'?'desc':'asc';
     if(r.fond&&Number.isInteger(r.fond.val))S.fond={on:!!r.fond.on,val:r.fond.val};
+    if(r.roll)for(const k in ROLL0)if(Number.isInteger(r.roll[k])&&r.roll[k]>0)S.roll[k]=Math.min(999,r.roll[k]);
+    if(Array.isArray(r.hist))r.hist.slice(0,N).forEach((h,i)=>{if(Array.isArray(h)&&h.every(n=>Number.isInteger(n)&&n>0)&&h.reduce((a,b)=>a+b,0)<=S.q[i])S.hist[i]=h});
+    S.just=r.just===true;
   }}catch(e){}
 let fresh=true;
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+/* mode ajout : addMode = saisie d'un ajout en cours ; H[i] = ajouts validés (sauvés dans S.hist) ; just = dernier geste = ajout validé */
+let addMode=false,addStr='',just=S.just;
+const H=S.hist;
+const save=()=>{S.just=just;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 
 const seq=()=>{const a=[...Array(N).keys()];return S.ord==='desc'?a:a.reverse()};
 const stepIdx=d=>{const s=seq();return s[(s.indexOf(S.idx)+d+N)%N]};
@@ -151,7 +179,17 @@ const fmtInt=n=>String(n).replace(/\B(?=(\d{3})+(?!\d))/g,"'");
 const fmtNum=c=>{const a=Math.abs(c);return fmtInt(Math.floor(a/100))+','+String(a%100).padStart(2,'0')};
 const fmtEur=c=>(c<0?'−':'')+fmtNum(c)+' €';
 const lenOf=t=>t.length>12?'xl':t.length>9?'l':'';
-const total=()=>S.q.reduce((s,q,i)=>s+q*D[i][0],0);
+const pend=()=>addMode&&addStr?+addStr:0;
+const qEff=i=>S.q[i]+(i===S.idx?pend():0);
+const total=()=>S.q.reduce((s,q,i)=>s+qEff(i)*D[i][0],0);
+const isCoin=i=>D[i][2]==='Pièce';
+const rollOf=i=>S.roll[D[i][0]];
+/* termes de l'historique : base + ajouts validés (vide si incohérent) */
+function parts(){
+  const q=S.q[S.idx],h=H[S.idx],s=h.reduce((a,b)=>a+b,0);
+  if(!h.length||s>q)return [q];
+  const a=h.slice();if(q-s>0)a.unshift(q-s);return a;
+}
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const ph=$('#ph');
@@ -166,6 +204,7 @@ const kb=(k,t,cls,a)=>`<button class="k ${cls||''}" data-k="${k}" style="grid-ar
   h+=kb('bk','⌫','act','10/1/span 3/span 1')+kb('0','0','','10/2/span 3/span 1')+kb('clr','Effacer','clr','10/3/span 3/span 1');
   h+=kb('p','Préc.','sm','1/4/span 2/span 1')+kb('+','+1','act','3/4/span 3/span 1')+kb('-','−1','act','6/4/span 3/span 1')+kb('n','Suivant ›','nx','9/4/span 4/span 1');
   $('#pad').innerHTML=h;
+  $('#rolls').innerHTML=D.map((d,i)=>!isCoin(i)?'':`<div class="line" style="margin-bottom:6px"><span class="rl">${d[1]}</span><div class="btns rr"><button class="btn s" data-k="r:${i}:-5">−5</button><button class="btn s" data-k="r:${i}:-1">−1</button><span class="rv" id="rv${i}"></span><button class="btn s" data-k="r:${i}:1">+1</button><button class="btn s" data-k="r:${i}:5">+5</button></div></div>`).join('');
 })();
 
 function buildLists(){
@@ -180,7 +219,7 @@ function centerIn(box,el){
   box.scrollLeft=el.offsetLeft-(box.clientWidth-el.offsetWidth)/2;
 }
 function render(){
-  const t=total(), q=S.q[S.idx], d=D[S.idx];
+  const t=total(), q=S.q[S.idx], qe=qEff(S.idx), d=D[S.idx];
   const tt=fmtEur(t);
   $$('.tot').forEach(e=>{e.textContent=tt;e.dataset.len=lenOf(tt)});
   let ec='',cl='',fo='';
@@ -195,11 +234,20 @@ function render(){
   $$('.hd .ecart').forEach(e=>{e.textContent=ec;e.classList.remove('up','dn','eq');if(cl)e.classList.add(cl)});
   $$('.f-denom').forEach(e=>{e.textContent=d[1];e.style.background=d[3]});
   $$('.f-type').forEach(e=>e.textContent=d[2]);
-  const st=fmtNum(q*d[0]);
-  $$('.f-qty').forEach(e=>{e.textContent=q?fmtInt(q):'-';e.classList.toggle('zero',!q);e.classList.toggle('fresh',fresh&&q>0)});
-  $$('.f-sub').forEach(e=>{e.textContent=q?st:'-';e.classList.toggle('zero',!q);e.dataset.len=q?lenOf(st):''});
+  const st=fmtNum(qe*d[0]);
+  const qt=addMode?`${fmtInt(q)} + ${addStr?fmtInt(+addStr):'_'}`:(q?fmtInt(q):'-');
+  $$('.f-qty').forEach(e=>{e.textContent=qt;e.classList.toggle('zero',!addMode&&!q);e.classList.toggle('fresh',!addMode&&fresh&&q>0);e.classList.toggle('adding',addMode)});
+  $$('.cardA').forEach(e=>e.classList.toggle('adding',addMode));
+  $$('.f-sub').forEach(e=>{e.textContent=qe?st:'-';e.classList.toggle('zero',!qe);e.dataset.len=qe?lenOf(st):''});
+  const ps=parts();let ht='';
+  if(addMode)ht=ps.map(fmtInt).join(' + ')+' + '+(addStr?fmtInt(+addStr):'_')+' = '+fmtInt(qe);
+  else if(ps.length>1)ht=ps.map(fmtInt).join(' + ');
+  $$('.hist').forEach(e=>{e.textContent=ht;e.classList.toggle('live',addMode)});
+  $$('.rollb').forEach(e=>{e.hidden=!isCoin(S.idx);if(isCoin(S.idx))e.textContent='+ rouleau ('+rollOf(S.idx)+')'});
+  $$('.addb').forEach(e=>e.classList.toggle('on',addMode));
+  D.forEach((x,i)=>{const e=$('#rv'+i);if(e)e.textContent=rollOf(i)});
   $$('[data-i]').forEach(e=>{
-    const i=+e.dataset.i,qq=S.q[i];
+    const i=+e.dataset.i,qq=qEff(i);
     e.classList.toggle('cur',i===S.idx);
     const a=e.querySelector('.rq'),c=e.querySelector('.st');
     a.textContent=qq?fmtInt(qq):'-';a.classList.toggle('zero',!qq);
@@ -211,6 +259,7 @@ function render(){
   e1('#fondTog',S.fond.on?'Activé':'Désactivé',S.fond.on);
   e1('#vibTog',S.vib?'Activée':'Désactivée',S.vib);$('#vibNA').hidden=vibOK;$('#vibTog').disabled=!vibOK;
   $('#fondVal').textContent=S.fond.on?fmtInt(S.fond.val)+' €':'—';
+  $$('.f-qty').forEach(e=>{e.style.fontSize='';let z=parseFloat(getComputedStyle(e).fontSize);while(e.scrollWidth>e.clientWidth+1&&z>12){z-=2;e.style.fontSize=z+'px'}});
   const sk=S.idx+S.ord;
   if(sk!==lastScroll){lastScroll=sk;centerIn($('#strip'),$(`#strip [data-i="${S.idx}"]`));}
 }
@@ -225,15 +274,35 @@ let wl=null;
 async function lock(){try{if('wakeLock' in navigator&&!wl){wl=await navigator.wakeLock.request('screen');wl.addEventListener('release',()=>{wl=null})}}catch(e){wl=null}}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')lock()});
 
-function goto(i){S.idx=(i+N)%N;fresh=true}
+/* valide l'ajout en cours (s'il y a des chiffres) et sort du mode ajout */
+function validate(){
+  if(addMode){const n=pend();if(n){S.q[S.idx]+=n;H[S.idx].push(n);just=true;fresh=false}addMode=false;addStr=''}
+}
+function resetHist(){H[S.idx]=[];just=false}
+function goto(i){validate();S.idx=(i+N)%N;fresh=true;just=false;addMode=false;addStr=''}
 function setOrd(o){if(S.ord===o)return;S.ord=o;buildLists();lastScroll='';commit()}
-function doClear(){S.q[S.idx]=0;fresh=false;armClr=false;clearTimeout(armT);vib(2);commit()}
+function doClear(){S.q[S.idx]=0;fresh=false;armClr=false;clearTimeout(armT);addMode=false;addStr='';resetHist();vib(2);commit()}
 function commit(){save();render()}
 function key(k){
-  if(/^[0-9]$/.test(k)){const d=+k,q=S.q[S.idx],nq=fresh?d:q*10+d;if(nq>9999)return vib(2);S.q[S.idx]=nq;fresh=false;vib();return commit()}
-  if(k==='bk'){S.q[S.idx]=Math.floor(S.q[S.idx]/10);fresh=false;vib();return commit()}
-  if(k==='+'){S.q[S.idx]=Math.min(9999,S.q[S.idx]+1);fresh=true;vib();return commit()}
-  if(k==='-'){S.q[S.idx]=Math.max(0,S.q[S.idx]-1);fresh=true;vib();return commit()}
+  if(/^[0-9]$/.test(k)){
+    if(addMode){const s=(addStr+k).replace(/^0+(?=\d)/,'');if(S.q[S.idx]+(+s)>9999)return vib(2);addStr=s;vib();return commit()}
+    const d=+k,q=S.q[S.idx],nq=fresh?d:q*10+d;if(nq>9999)return vib(2);S.q[S.idx]=nq;fresh=false;resetHist();vib();return commit()}
+  if(k==='bk'){
+    if(addMode){if(addStr)addStr=addStr.slice(0,-1);else addMode=false;vib();return commit()}
+    const h=H[S.idx];
+    if(just&&h.length){S.q[S.idx]-=h.pop();just=false;fresh=false;vib();return commit()}
+    S.q[S.idx]=Math.floor(S.q[S.idx]/10);fresh=false;resetHist();vib();return commit()}
+  if(k==='add'){
+    if(addMode){if(addStr){validate();addMode=true;addStr=''}else{addMode=false}}
+    else{addMode=true;addStr=''}
+    vib();return commit()}
+  if(k==='roll'){
+    if(!isCoin(S.idx))return;
+    validate();const r=rollOf(S.idx);
+    if(S.q[S.idx]+r>9999)return vib(2),commit();
+    S.q[S.idx]+=r;H[S.idx].push(r);just=true;fresh=false;vib();return commit()}
+  if(k==='+'){validate();S.q[S.idx]=Math.min(9999,S.q[S.idx]+1);fresh=true;resetHist();vib();return commit()}
+  if(k==='-'){validate();S.q[S.idx]=Math.max(0,S.q[S.idx]-1);fresh=true;resetHist();vib();return commit()}
   if(k==='n'){goto(stepIdx(1));vib(2);return commit()}
   if(k==='p'){goto(stepIdx(-1));vib();return commit()}
   if(k==='clr'){
@@ -251,8 +320,9 @@ function key(k){
   if(k==='fondtog'){S.fond.on=!S.fond.on;return commit()}
   if(k.startsWith('f:')){S.fond.val=Math.max(0,S.fond.val+(+k.slice(2)));return commit()}
   if(k.startsWith('f=:')){S.fond.val=+k.slice(3);S.fond.on=true;return commit()}
+  if(k.startsWith('r:')){const [,i,dl]=k.split(':');const c=D[+i][0];S.roll[c]=Math.min(999,Math.max(1,S.roll[c]+(+dl)));return commit()}
   if(k==='new'){
-    if(newArm){S.q=Array(N).fill(0);S.idx=seq()[0];fresh=true;newArm=false;$('#newBtn').textContent='Nouveau comptage';$('#newBtn').classList.remove('armed');return commit()}
+    if(newArm){S.q=Array(N).fill(0);H.forEach((_,i)=>H[i]=[]);addMode=false;addStr='';just=false;S.idx=seq()[0];fresh=true;newArm=false;$('#newBtn').textContent='Nouveau comptage';$('#newBtn').classList.remove('armed');return commit()}
     newArm=true;$('#newBtn').textContent='Sûr ? Appuyer encore';$('#newBtn').classList.add('armed');
     clearTimeout(newT);newT=setTimeout(()=>{newArm=false;$('#newBtn').textContent='Nouveau comptage';$('#newBtn').classList.remove('armed')},2500);
   }

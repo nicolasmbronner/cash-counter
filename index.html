@@ -120,6 +120,7 @@ button{font:inherit;color:inherit;border:0;background:none;touch-action:manipula
     <div class="note">Désactivé : l'app compte seulement, pas d'écart.</div>
     <div class="line" style="margin-top:12px"><button class="btn clr" id="newBtn" data-k="new">Nouveau comptage</button></div>
     <div class="note">2 appuis pour confirmer. Remet les 15 quantités à zéro.</div>
+    <div class="note" style="margin-top:12px;opacity:.5;font-size:11px">v3</div>
   </div>
 </div>
 
@@ -276,7 +277,13 @@ ph.addEventListener('contextmenu',e=>e.preventDefault());
 
 render();
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist().catch(()=>{})}catch(e){}
-if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+if('serviceWorker' in navigator){
+  const had=!!navigator.serviceWorker.controller;let rl=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!rl){rl=true;location.reload()}});
+  addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').then(reg=>{
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})});
+  }).catch(()=>{}));
+}
 </script>
 </body>
 </html>
